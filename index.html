@@ -3,206 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>배드민턴 코트 배정 시스템 (v3)</title>
+    <title>배드민턴 코트 배정 시스템 (v5 - 타이머)</title>
     <style>
-        /* --- 기본 스타일 --- */
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            flex-direction: column;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        /* --- 글로벌 컨트롤 --- */
-        .global-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap; /* [수정] 창이 좁아지면 줄바꿈 */
-            gap: 15px; /* [수정] 컨트롤 간 간격 */
-            background-color: #fff;
-            padding: 15px 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
-        }
-
-        .global-controls .control-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        /* ... (기본 스타일 v4와 거의 동일) ... */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; padding: 20px; flex-direction: column; -webkit-font-smoothing: antialiased; }
+        .container { width: 100%; max-width: 1200px; margin: 0 auto; }
+        .global-controls { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; background-color: #fff; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .global-controls .control-group { display: flex; align-items: center; gap: 8px; }
+        .global-controls label { font-weight: bold; font-size: 0.9rem; }
+        .global-controls button, .control-group button { padding: 10px 15px; background-color: #007aff; color: white; border: none; border-radius: 5px; font-size: 0.9rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s; }
+        .global-controls button:hover, .control-group button:hover { background-color: #0056b3; }
+        .global-controls input[type="time"], .global-controls input[type="file"] { border: 1px solid #ccc; border-radius: 5px; padding: 5px 8px; }
+        .global-controls input[type="file"] { display: none; }
+        .global-controls #csvLoadButton { background-color: #34c759; }
+        .global-controls #csvLoadButton:hover { background-color: #2a9e48; }
+        .global-controls #downloadListButton { background-color: #ff9500; }
+        .global-controls #downloadListButton:hover { background-color: #c67600; }
+        .global-controls #clearMasterTime { background-color: #eee; color: #555; padding: 5px 8px; font-size: 0.8rem; }
+        .global-controls #clearMasterTime:hover { background-color: #ddd; }
+        .courts-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .court { position: relative; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 5px; background-color: #333; border: 12px solid #e0e0e0; border-radius: 5px; padding: 5px; }
         
-        .global-controls label {
-            font-weight: bold;
-            font-size: 0.9rem;
-        }
-
-        .global-controls button, .control-group button {
-            padding: 10px 15px;
-            background-color: #007aff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-        .global-controls button:hover {
-            background-color: #0056b3;
-        }
-
-        .global-controls input[type="time"],
-        .global-controls input[type="file"] {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 5px 8px;
-        }
-        
-        /* [신규] 파일 업로드 버튼 숨기기 (디자인용) */
-        .global-controls input[type="file"] {
-            display: none;
-        }
-        
-        /* [신규] 파일 업로드용 커스텀 버튼 */
-        .global-controls #csvLoadButton {
-            background-color: #34c759;
-        }
-        .global-controls #csvLoadButton:hover {
-            background-color: #2a9e48;
-        }
-
-        .global-controls #clearMasterTime {
-            background-color: #eee;
-            color: #555;
-            padding: 5px 8px;
-            font-size: 0.8rem;
-        }
-        .global-controls #clearMasterTime:hover {
-            background-color: #ddd;
-        }
-
-        /* --- 코트 레이아웃 --- */
-        .courts-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .court {
-            position: relative;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 5px;
-            background-color: #333;
-            border: 12px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 5px;
-        }
-
+        /* --- [수정] 코트 번호판 (상태창) 스타일 --- */
         .court-number {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 40px;
+            width: 80px; /* [수정] 너비 확장 */
             height: 40px;
-            background-color: #333;
+            background-color: #555; /* [수정] 기본 회색 */
             color: white;
-            border-radius: 50%;
+            border-radius: 20px; /* [수정] 둥근 사각형 */
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1.5rem;
+            font-size: 1.1rem; /* [수정] 폰트 크기 조정 */
             font-weight: bold;
             z-index: 10;
             pointer-events: none;
-        }
-
-        .player-slot {
-            background-color: #f0f0f0;
-            color: #aaa;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 80px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background-color 0.2s, transform 0.1s;
-            user-select: none;
-            z-index: 1;
-            border: 2px dashed transparent; /* [신규] 드래그 효과용 */
-        }
-
-        .player-slot.filled {
-            background-color: #fbc2c2;
-            color: #c93a3a;
-            font-weight: bold;
+            transition: background-color 0.3s;
         }
         
-        /* --- [신규] 드래그 앤 드롭 스타일 --- */
-        .player-slot.drag-over {
-            /* 빈 슬롯 위로 드래그 시 효과 */
-            background-color: #d4ffd4;
-            border-color: #34c759;
-            transform: scale(1.03);
+        /* --- [신규] '경기중' 상태 스타일 --- */
+        .court-number.playing {
+            background-color: #34c759; /* 녹색 */
+            font-family: 'Menlo', 'Monaco', 'Courier New', monospace; /* 타이머 폰트 */
+            font-size: 1.25rem;
         }
-        
-        .wait-item.dragging {
-            /* 드래그 중인 대기자 항목 */
-            opacity: 0.4;
-            transform: scale(0.95);
-        }
-        /* --- 드래그 앤 드롭 끝 --- */
 
-
-        /* --- 대기 명단 --- */
-        .waitlist-section {
-            background-color: #f2e8e8;
-            padding: 20px;
-            border-radius: 10px;
-        }
+        .player-slot { background-color: #f0f0f0; color: #aaa; display: flex; justify-content: center; align-items: center; min-height: 80px; font-size: 0.9rem; font-weight: bold; cursor: pointer; transition: background-color 0.2s, transform 0.1s; user-select: none; z-index: 1; border: 2px dashed transparent; }
+        .player-slot.filled { background-color: #fbc2c2; color: #c93a3a; font-weight: bold; }
+        .player-slot.drag-over { background-color: #d4ffd4; border-color: #34c759; transform: scale(1.03); }
+        .wait-item.dragging { opacity: 0.4; transform: scale(0.95); }
+        .waitlist-section { background-color: #f2e8e8; padding: 20px; border-radius: 10px; }
         .waitlist-section h3 { margin: 0 0 20px 0; font-size: 1.5rem; color: #333; }
         .add-player-form { display: flex; gap: 10px; margin-bottom: 20px; }
         .add-player-form input[type="text"] { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 1rem; }
         .add-player-form button { padding: 10px 20px; background-color: #5a8d5a; color: white; border: none; border-radius: 5px; font-size: 1rem; font-weight: bold; cursor: pointer; }
         .add-player-form button:hover { background-color: #4a744a; }
-
-        .waiting-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 10px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .wait-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #fdf6f6;
-            padding: 10px 15px;
-            border-radius: 5px;
-            border: 1px solid #e0c8c8;
-            cursor: grab; /* [신규] 드래그 가능 표시 */
-            transition: opacity 0.2s, transform 0.2s;
-        }
-        .wait-item:active { cursor: grabbing; } /* [신규] 드래그 중 표시 */
+        .waiting-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; list-style: none; padding: 0; margin: 0; }
+        .wait-item { display: flex; justify-content: space-between; align-items: center; background: #fdf6f6; padding: 10px 15px; border-radius: 5px; border: 1px solid #e0c8c8; cursor: grab; transition: opacity 0.2s, transform 0.2s; }
+        .wait-item:active { cursor: grabbing; }
         .wait-item .player-name { font-weight: bold; font-size: 1.1rem; color: #333; }
         .wait-item .wait-time { background: #eee; padding: 5px 8px; border-radius: 3px; font-size: 0.9rem; font-weight: bold; color: #555; min-width: 60px; text-align: right; }
         .wait-item .assign-btn { padding: 5px 10px; font-size: 0.8rem; background-color: #4a76c2; color: white; border: none; border-radius: 3px; cursor: pointer; margin-left: 5px; }
@@ -217,14 +79,15 @@
             <div class="control-group">
                 <button id="addCourtButton">➕ 코트 추가</button>
             </div>
-            
             <div class="control-group">
                 <input type="file" id="csvFileInput" accept=".csv, text/csv">
                 <button id="csvLoadButton" onclick="document.getElementById('csvFileInput').click();">
                     📄 CSV 명단 불러오기
                 </button>
             </div>
-
+            <div class="control-group">
+                <button id="downloadListButton">💾 대기명단 저장 (CSV)</button>
+            </div>
             <div class="control-group time-control">
                 <label for="masterStartTime">대표 시작 시간:</label>
                 <input type="time" id="masterStartTime">
@@ -237,69 +100,56 @@
         
         <div class="waitlist-section">
             <h3>대기 명단 & 대기 시간 표시</h3>
-            
             <div class="add-player-form">
                 <input type="text" id="playerNameInput" placeholder="대기자 이름 입력...">
                 <button id="addPlayerButton">대기열 추가</button>
             </div>
-            
-            <ul class="waiting-list" id="waitingList">
-                </ul>
+            <ul class="waiting-list" id="waitingList"></ul>
         </div>
 
     </div>
 
     <script>
-        // --- JavaScript (애플리케이션 동작 로직) ---
+        // --- JavaScript (v5) ---
 
-        // 1. 필요한 HTML 요소들을 가져옵니다.
+        // 1. 필요한 HTML 요소들을 가져옵니다. (v4와 동일)
         const playerNameInput = document.getElementById('playerNameInput');
         const addPlayerButton = document.getElementById('addPlayerButton');
         const waitingListElement = document.getElementById('waitingList');
         const courtsContainer = document.getElementById('courtsContainer');
-        
         const addCourtButton = document.getElementById('addCourtButton');
         const masterStartTimeInput = document.getElementById('masterStartTime');
         const clearMasterTimeButton = document.getElementById('clearMasterTime');
-        
-        // [신규] CSV 파일 입력
         const csvFileInput = document.getElementById('csvFileInput');
+        const downloadListButton = document.getElementById('downloadListButton');
 
         // 2. 데이터 변수
         let waitingQueue = [];
         let nextId = 0;
-        let courtCount = 0; // [수정] 0에서 시작해서 addCourt로 생성
+        
+        // --- [신규] 코트 상태를 관리하는 "브레인" ---
+        let courts = []; // { id: 1, players: [null, null, null, null], status: 'waiting', startTime: null }
+        // ------------------------------------------
 
-        // 3. (함수) 대기열 목록을 화면에 렌더링 (업데이트)
+        // 3. (함수) 대기열 목록 렌더링 (v4와 동일)
         function renderWaitingList() {
             waitingListElement.innerHTML = '';
             const now = Date.now();
-
             waitingQueue.forEach(player => {
                 const elapsedSeconds = Math.floor((now - player.startTime) / 1000);
                 const minutes = Math.floor(elapsedSeconds / 60);
                 const seconds = elapsedSeconds % 60;
                 const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}초`;
-
                 const li = document.createElement('li');
                 li.className = 'wait-item';
-                
-                // --- [신규] 드래그 앤 드롭 속성 추가 ---
                 li.setAttribute('draggable', 'true');
-                li.dataset.playerId = player.id; // [수정] 드래그 시작 시 ID를 알기 위해 data 속성 사용
-                
+                li.dataset.playerId = player.id;
                 li.addEventListener('dragstart', (e) => {
                     e.dataTransfer.setData('text/plain', player.id);
                     e.dataTransfer.effectAllowed = 'move';
-                    // [수정] e.target 대신 명확하게 li에 클래스 추가
                     li.classList.add('dragging'); 
                 });
-                
-                li.addEventListener('dragend', () => {
-                    li.classList.remove('dragging');
-                });
-                // --- 드래그 앤 드롭 끝 ---
-
+                li.addEventListener('dragend', () => { li.classList.remove('dragging'); });
                 li.innerHTML = `
                     <span class="player-name">${player.name}</span>
                     <span class="wait-time">${formattedTime}</span>
@@ -308,248 +158,280 @@
                 waitingListElement.appendChild(li);
             });
         }
+        
+        // --- [신규] 코트 상태 렌더링 (타이머 표시) ---
+        function renderCourtStatus() {
+            const now = Date.now();
+            
+            courts.forEach(court => {
+                let display = '대기'; // 기본값
+                let isPlaying = false;
+                
+                if (court.status === 'playing') {
+                    const elapsedSeconds = Math.floor((now - court.startTime) / 1000);
+                    const minutes = Math.floor(elapsedSeconds / 60);
+                    const seconds = elapsedSeconds % 60;
+                    display = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    isPlaying = true;
+                }
+                
+                // DOM 업데이트
+                const courtElement = document.getElementById(`court-${court.id}`);
+                const numberSpan = courtElement.querySelector('.court-number');
+                numberSpan.textContent = display;
+                numberSpan.classList.toggle('playing', isPlaying); // 'playing' 클래스 토글
+            });
+        }
 
-        // 4. (함수) 대기열에 새 플레이어 추가 (이름, 시작시간)
+        // 4. (함수) 대기열에 새 플레이어 추가 (v4와 동일)
         function addPlayerToQueue(name, startTime) {
-            if (!name || name.trim() === "") return; // 빈 이름은 추가하지 않음
-
-            const newPlayer = {
-                id: nextId++,
-                name: name.trim(),
-                startTime: startTime
-            };
+            if (!name || name.trim() === "") return;
+            const newPlayer = { id: nextId++, name: name.trim(), startTime: startTime };
             waitingQueue.push(newPlayer);
         }
         
-        // 4-1. (함수) '대기열 추가' 버튼 클릭 시 실행
+        // 4-1. (함수) '대기열 추가' 버튼 핸들러 (v4와 동일)
         function handleAddPlayerButton() {
             const name = playerNameInput.value;
-            if (name.trim() === "") {
-                alert("플레이어 이름을 입력하세요!");
-                return;
-            }
-
-            // 대표 시작 시간 확인 로직
+            if (name.trim() === "") { alert("플레이어 이름을 입력하세요!"); return; }
             let startTime = Date.now(); 
             const masterTimeValue = masterStartTimeInput.value;
             if (masterTimeValue) {
                 const [hours, minutes] = masterTimeValue.split(':').map(Number);
                 const manualStartTime = new Date();
                 manualStartTime.setHours(hours, minutes, 0, 0);
-                
-                if (manualStartTime.getTime() > Date.now()) {
-                    alert("대표 시작 시간은 현재 시간보다 미래일 수 없습니다.");
-                    return;
-                }
+                if (manualStartTime.getTime() > Date.now()) { alert("대표 시작 시간은 현재 시간보다 미래일 수 없습니다."); return; }
                 startTime = manualStartTime.getTime();
             }
-            
-            addPlayerToQueue(name, startTime); // 공통 함수 호출
-            playerNameInput.value = ''; // 입력창 비우기
-            renderWaitingList(); // 화면 갱신
+            addPlayerToQueue(name, startTime);
+            playerNameInput.value = '';
+            renderWaitingList();
         }
 
-        // 5. [수정] (함수) 플레이어를 슬롯에 배정 (핵심 로직 통합)
-        function assignPlayerById(playerId, targetSlot) {
-            // 1. 대기열에서 플레이어 찾기
-            const playerIndex = waitingQueue.findIndex(p => p.id == playerId);
-            if (playerIndex === -1) return; // 대기열에 없는 플레이어 (이미 배정됨)
+        // --- [신규] 코트 상태 체크 (핵심 로직) ---
+        function checkCourtStatus(courtId) {
+            const court = courts.find(c => c.id == courtId);
+            if (!court) return;
 
+            // 현재 코트의 플레이어 수 계산
+            const playerCount = court.players.filter(p => p !== null).length;
+
+            if (playerCount === 4 && court.status === 'waiting') {
+                // 4명이 꽉 찼고, '대기' 상태였으면 -> '경기중'으로 변경
+                court.status = 'playing';
+                court.startTime = Date.now();
+            } else if (playerCount < 4 && court.status === 'playing') {
+                // 4명 미만이고, '경기중' 상태였으면 -> '대기'로 변경
+                court.status = 'waiting';
+                court.startTime = null;
+            }
+            
+            // 즉시 상태 렌더링 (1초 안 기다림)
+            renderCourtStatus();
+        }
+
+        // 5. [수정] (함수) 플레이어를 슬롯에 배정
+        function assignPlayerById(playerId, targetSlot) {
+            const playerIndex = waitingQueue.findIndex(p => p.id == playerId);
+            if (playerIndex === -1) return;
             const player = waitingQueue[playerIndex];
 
-            // 2. targetSlot이 주어졌는지 (드래그) 확인, 없으면 (버튼 클릭) 빈 슬롯 찾기
             let slotToFill = targetSlot;
-            
-            if (!slotToFill) { // 버튼 클릭 시
+            if (!slotToFill) {
                 const allSlots = document.querySelectorAll('.player-slot');
                 for (const slot of allSlots) {
-                    if (!slot.classList.contains('filled')) {
-                        slotToFill = slot;
-                        break;
-                    }
+                    if (!slot.classList.contains('filled')) { slotToFill = slot; break; }
                 }
             }
             
-            // 3. 빈 슬롯이 있는지 최종 확인
-            if (!slotToFill) {
-                alert("모든 코트가 꽉 찼습니다!");
-                return;
-            }
-            
-            // [수정] 이미 채워진 슬롯에 드롭하는 것 방지
-            if (slotToFill.classList.contains('filled')) {
-                alert("이미 플레이어가 배정된 슬롯입니다.");
-                return;
-            }
+            if (!slotToFill) { alert("모든 코트가 꽉 찼습니다!"); return; }
+            if (slotToFill.classList.contains('filled')) { alert("이미 플레이어가 배정된 슬롯입니다."); return; }
 
-            // 4. 슬롯 채우기
+            // [수정] 코트 '브레인' 업데이트
+            const courtId = targetSlot.dataset.court;
+            const slotIndex = parseInt(targetSlot.dataset.slot, 10) - 1; // data-slot은 1부터, 배열은 0부터
+            const court = courts.find(c => c.id == courtId);
+            court.players[slotIndex] = player.name;
+            // ------------------------
+            
+            // DOM 업데이트 (기존 로직)
             slotToFill.classList.add('filled');
             slotToFill.textContent = player.name;
             slotToFill.dataset.playerName = player.name; 
 
-            // 5. 대기열에서 제거 및 화면 갱신
+            // 대기열 제거 및 렌더링 (기존 로직)
             waitingQueue.splice(playerIndex, 1);
             renderWaitingList();
+            
+            // [신규] 코트 상태 체크
+            checkCourtStatus(courtId);
         }
         
-        // 6. (함수) 코트 슬롯 비우기 (클릭 시)
+        // 6. [수정] (함수) 코트 슬롯 비우기 (클릭 시)
         function clearSlot(event) {
             const slot = event.target; 
             if (slot.classList.contains('filled')) {
                 const playerName = slot.dataset.playerName;
                 if (confirm(`'${playerName}'님의 배정을 취소하고 대기열로 돌려보내시겠습니까?`)) {
-                    addPlayerToQueue(playerName, Date.now()); // 대기열 맨 뒤로 다시 추가
                     
+                    // [수정] 코트 '브레인' 업데이트
+                    const courtId = slot.dataset.court;
+                    const slotIndex = parseInt(slot.dataset.slot, 10) - 1;
+                    const court = courts.find(c => c.id == courtId);
+                    court.players[slotIndex] = null; // 플레이어 제거
+                    // ------------------------
+
+                    // 대기열 복귀 (기존 로직)
+                    addPlayerToQueue(playerName, Date.now());
+                    
+                    // DOM 업데이트 (기존 로직)
                     slot.classList.remove('filled');
-                    slot.textContent = `플레이어 ${slot.dataset.slot}`;
+                    slot.textContent = `플레이어 ${parseInt(slot.dataset.slot, 10)}`; // [수정] 1,2,3,4로 복원
                     delete slot.dataset.playerName;
                     
+                    // 렌더링
                     renderWaitingList(); 
+                    
+                    // [신규] 코트 상태 체크
+                    checkCourtStatus(courtId);
                 }
             }
         }
 
-        // 7. (함수) 새 코트 추가
+        // 7. [수정] (함수) 새 코트 추가
         function addCourt() {
-            courtCount++;
+            const newCourtId = courts.length + 1; // ID는 1부터 시작
+            
+            // [신규] 코트 '브레인'에 데이터 추가
+            const newCourtData = {
+                id: newCourtId,
+                players: [null, null, null, null],
+                status: 'waiting',
+                startTime: null
+            };
+            courts.push(newCourtData);
+            // ------------------------
+
+            // DOM 업데이트 (기존 로직)
             const newCourt = document.createElement('div');
             newCourt.className = 'court';
-            newCourt.id = `court-${courtCount}`;
+            newCourt.id = `court-${newCourtId}`;
+            
+            // [수정] 슬롯 1, 2, 3, 4로 텍스트 수정
             newCourt.innerHTML = `
-                <span class="court-number">${courtCount}</span>
-                <div class="player-slot" data-court="${courtCount}" data-slot="1">플레이어 1</div>
-                <div class="player-slot" data-court="${courtCount}" data-slot="2">플레이어 2</div>
-                <div class="player-slot" data-court="${courtCount}" data-slot="3">플레이어 3</div>
-                <div class="player-slot" data-court="${courtCount}" data-slot="4">플레이어 4</div>
+                <span class="court-number">대기</span>
+                <div class="player-slot" data-court="${newCourtId}" data-slot="1">플레이어 1</div>
+                <div class="player-slot" data-court="${newCourtId}" data-slot="2">플레이어 2</div>
+                <div class="player-slot" data-court="${newCourtId}" data-slot="3">플레이어 3</div>
+                <div class="player-slot" data-court="${newCourtId}" data-slot="4">플레이어 4</div>
             `;
             courtsContainer.appendChild(newCourt);
         }
         
-        // 8. [신규] (함수) CSV 파일 읽기
+        // 8. (함수) CSV 파일 읽기 (v4와 동일)
         function handleCsvUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
-            
             reader.onload = (e) => {
                 const text = e.target.result;
-                const lines = text.split('\n'); // 파일 내용을 줄바꿈 기준으로 나눔
-                
-                const startTime = Date.now(); // 파일 업로드 시점의 시간
+                const lines = text.split('\n');
+                const startTime = Date.now();
                 let addedCount = 0;
-
                 lines.forEach(line => {
-                    const name = line.trim(); // 각 줄의 이름 (공백 제거)
-                    if (name) { // 빈 줄이 아니면
-                        addPlayerToQueue(name, startTime); // 대기열에 추가
-                        addedCount++;
-                    }
+                    const name = line.trim();
+                    if (name) { addPlayerToQueue(name, startTime); addedCount++; }
                 });
-                
-                renderWaitingList(); // 전체 대기열 갱신
+                renderWaitingList();
                 alert(`${addedCount}명의 플레이어가 대기열에 추가되었습니다.`);
-                
-                // [중요] input 값을 비워야 같은 파일을 다시 올려도 'change' 이벤트가 발생함
                 csvFileInput.value = ''; 
             };
-            
-            reader.onerror = () => {
-                alert("파일을 읽는 중 오류가 발생했습니다.");
-            };
-
-            reader.readAsText(file); // 파일을 텍스트로 읽기 시작
+            reader.onerror = () => { alert("파일을 읽는 중 오류가 발생했습니다."); };
+            reader.readAsText(file);
+        }
+        
+        // 9. (함수) 현재 대기열을 CSV로 다운로드 (v4와 동일)
+        function downloadWaitlistAsCsv() {
+            if (waitingQueue.length === 0) { alert("다운로드할 대기자가 없습니다."); return; }
+            const now = Date.now();
+            let csvContent = "\uFEFF이름,현재 대기시간 (mm:ss)\r\n"; // BOM + 헤더
+            waitingQueue.forEach(player => {
+                const elapsedSeconds = Math.floor((now - player.startTime) / 1000);
+                const minutes = Math.floor(elapsedSeconds / 60);
+                const seconds = elapsedSeconds % 60;
+                const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                csvContent += `"${player.name}","${formattedTime}"\r\n`;
+            });
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "badminton_waitlist.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
 
-        // --- 이벤트 리스너 연결 ---
-
-        // '대기열 추가' 버튼
+        // --- 이벤트 리스너 연결 --- (v4와 동일)
         addPlayerButton.addEventListener('click', handleAddPlayerButton);
-        playerNameInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleAddPlayerButton();
-        });
-
-        // '코트 추가' 버튼
+        playerNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleAddPlayerButton(); });
         addCourtButton.addEventListener('click', addCourt);
-        
-        // '대표 시간 지우기' 버튼
-        clearMasterTimeButton.addEventListener('click', () => {
-            masterStartTimeInput.value = '';
-        });
-        
-        // [신규] CSV 파일 선택(change) 이벤트
+        clearMasterTimeButton.addEventListener('click', () => { masterStartTimeInput.value = ''; });
         csvFileInput.addEventListener('change', handleCsvUpload);
-
-        // '배정' 버튼 클릭 (이벤트 위임)
+        downloadListButton.addEventListener('click', downloadWaitlistAsCsv);
         waitingListElement.addEventListener('click', (e) => {
             if (e.target.classList.contains('assign-btn')) {
                 const playerId = e.target.dataset.playerId;
-                assignPlayerById(playerId, null); // targetSlot을 null로 전달
+                assignPlayerById(playerId, null);
             }
         });
-        
-        // 코트 슬롯 클릭 (배정 취소) (이벤트 위임)
         courtsContainer.addEventListener('click', (e) => {
             if (e.target.classList.contains('player-slot')) {
                 clearSlot(e);
             }
         });
-
-        // --- [신규] 드래그 앤 드롭 이벤트 리스너 (이벤트 위임) ---
-        
-        // 1. 드래그가 슬롯 위로 올라왔을 때
+        // 드래그 앤 드롭 (v4와 동일)
         courtsContainer.addEventListener('dragover', (e) => {
-            e.preventDefault(); // [필수] 'drop' 이벤트를 허용하기 위해 기본 동작 방지
+            e.preventDefault(); 
             const targetSlot = e.target;
-            // 빈 슬롯 위에서만 + 드래그 효과 주기
             if (targetSlot.classList.contains('player-slot') && !targetSlot.classList.contains('filled')) {
                 targetSlot.classList.add('drag-over');
                 e.dataTransfer.dropEffect = 'move';
-            } else {
-                e.dataTransfer.dropEffect = 'none';
-            }
+            } else { e.dataTransfer.dropEffect = 'none'; }
         });
-        
-        // 2. 드래그가 슬롯을 벗어났을 때
         courtsContainer.addEventListener('dragleave', (e) => {
             if (e.target.classList.contains('player-slot')) {
-                e.target.classList.remove('drag-over'); // 드래그 효과 제거
+                e.target.classList.remove('drag-over');
             }
         });
-        
-        // 3. 드롭(놓기)이 발생했을 때
         courtsContainer.addEventListener('drop', (e) => {
             e.preventDefault();
             const targetSlot = e.target;
-            targetSlot.classList.remove('drag-over'); // 드래그 효과 제거
-            
-            // 빈 슬롯에만 드롭 가능
+            targetSlot.classList.remove('drag-over'); 
             if (targetSlot.classList.contains('player-slot') && !targetSlot.classList.contains('filled')) {
                 const playerId = e.dataTransfer.getData('text/plain');
-                assignPlayerById(playerId, targetSlot); // targetSlot을 명시
+                assignPlayerById(playerId, targetSlot);
             }
         });
 
-        // --- [수정] 초기화 함수 ---
+        // --- 초기화 함수 ---
         function initializeApp() {
-            // 초기 4개 코트 생성
-            for (let i = 0; i < 4; i++) {
-                addCourt();
-            }
-            
-            // 초기 예시 데이터
-            waitingQueue = [
+            for (let i = 0; i < 4; i++) { addCourt(); } // 초기 4개 코트
+            waitingQueue = [ // 초기 예시 데이터
                 { id: nextId++, name: '박성준', startTime: Date.now() - 10000 },
                 { id: nextId++, name: '강준시', startTime: Date.now() - 20000 },
                 { id: nextId++, name: '고도한', startTime: Date.now() - 30000 },
-                { id: nextId++, name: '데크너', startTime: Date.now() - 10000},
-                { id: nextId++, name: '다이즈', startTime: Date.now() - 10000 },
             ];
             renderWaitingList();
+            renderCourtStatus(); // [신규] 초기 코트 상태 렌더링
         }
 
-        // 1초마다 타이머 갱신
-        setInterval(renderWaitingList, 1000);
+        // --- [수정] 메인 루프 (1초마다 실행) ---
+        setInterval(() => {
+            renderWaitingList(); // 대기열 타이머 갱신
+            renderCourtStatus(); // [신규] 코트 경기 타이머 갱신
+        }, 1000);
         
         // 앱 실행
         initializeApp();
